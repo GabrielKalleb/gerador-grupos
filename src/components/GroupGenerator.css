@@ -1,184 +1,329 @@
 /* GroupGenerator.css */
 .container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 1rem;
-  }
+  max-width: 1000px;
+  margin: 2rem auto; /* Adicionado mais margem superior/inferior */
+  padding: 1rem;
+  font-family: sans-serif; /* Definir uma fonte base */
+}
+
+.card {
+  border: 1px solid #e2e8f0; /* Cor de borda suave */
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Sombra mais pronunciada */
+  overflow: hidden; /* Garante que cantos arredondados funcionem com headers/footers */
+}
+
+.margin-top {
+  margin-top: 1.5rem; /* Aumentado espaço entre cards */
+}
+
+.card-header {
+  padding: 1rem 1.5rem; /* Mais padding horizontal */
+  background-color: #f8fafc; /* Fundo levemente diferente */
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1.125rem; /* Tamanho ligeiramente menor */
+  font-weight: 600;
+  color: #1f2937; /* Cor de texto mais escura */
+}
+
+.card-content {
+  padding: 1.5rem; /* Mais padding */
+}
+
+.card-footer {
+  padding: 1rem 1.5rem; /* Mais padding horizontal */
+  background-color: #f8fafc; /* Fundo levemente diferente */
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end; /* Alinha botões à direita por padrão */
+  gap: 0.75rem; /* Espaço entre botões */
+}
+
+/* Ajuste para o primeiro card ter botões espaçados */
+.card:first-of-type .card-footer {
+  justify-content: space-between;
+}
+
+
+.grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Aumentado espaço */
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Grid responsivo */
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem; /* Espaço menor entre label e input */
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563; /* Cor do label */
+}
+
+.input {
+  padding: 0.6rem 0.75rem; /* Padding ajustado */
+  border: 1px solid #d1d5db; /* Cor de borda */
+  border-radius: 6px; /* Borda mais arredondada */
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); /* Foco visível */
+}
+
+
+.button {
+  padding: 0.6rem 1.2rem; /* Padding ajustado */
+  border-radius: 6px; /* Borda mais arredondada */
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-weight: 500;
+  border: 1px solid transparent; /* Adicionado para consistência */
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  line-height: 1.25; /* Melhor alinhamento vertical do texto */
+}
+
+.button:disabled {
+  opacity: 0.6; /* Opacidade um pouco maior */
+  cursor: not-allowed;
+}
+
+.primary {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.primary:hover:not(:disabled) { /* Adicionado :not(:disabled) */
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.outline {
+  background-color: white;
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
+}
+
+.outline:hover:not(:disabled) { /* Adicionado :not(:disabled) */
+  background-color: rgba(59, 130, 246, 0.05); /* Fundo hover mais sutil */
+}
+
+.participant-input {
+  display: flex;
+  flex-wrap: wrap; /* Permite quebra de linha em telas menores */
+  gap: 0.75rem; /* Espaço entre elementos */
+  align-items: center; /* Alinha itens verticalmente */
+  position: relative; /* Para o posicionamento da mensagem de erro */
+}
+
+.participant-input .input {
+  flex-grow: 1; /* Input ocupa espaço disponível */
+  min-width: 200px; /* Largura mínima para o input */
+}
+
+/* --- NOVO: Estilo para Mensagem de Erro --- */
+.error-message {
+color: #dc3545; /* Cor vermelha para erros */
+font-size: 0.8em; /* Tamanho pequeno */
+margin-top: 4px; /* Pequeno espaço acima */
+width: 100%;     /* Ocupa a largura abaixo dos botões/input */
+text-align: left; /* Alinha à esquerda */
+padding-left: 5px; /* Pequeno padding */
+}
+
+.participant-list {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 1rem; /* Mais padding */
+  min-height: 100px;
+  background-color: #f9fafb; /* Fundo levemente diferente */
+}
+
+.participant-list h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.participants-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.participant-tag {
+  background-color: #e5e7eb; /* Cor de fundo da tag */
+  color: #374151; /* Cor do texto da tag */
+  padding: 0.3rem 0.6rem; /* Padding da tag */
+  border-radius: 12px; /* Tag mais arredondada (pill shape) */
+  display: inline-flex; /* Muda para inline-flex */
+  align-items: center;
+  gap: 0.4rem; /* Espaço entre texto e botão */
+  font-size: 0.875rem;
+  white-space: nowrap; /* Evita quebra de linha no nome */
+}
+
+/* --- ATUALIZADO/REFINADO: Estilo do Botão Remover --- */
+.participant-tag .remove-btn {
+  background: none;
+  border: none;
+  color: #9ca3af; /* Cor cinza para o 'x' */
+  cursor: pointer;
+  font-size: 1.1rem; /* Tamanho do 'x' */
+  line-height: 1;
+  padding: 0; /* Remove padding extra */
+  margin-left: 0.2rem; /* Pequeno espaço à esquerda */
+  font-weight: bold;
+  transition: color 0.2s ease-in-out;
+}
+
+.participant-tag .remove-btn:hover {
+  color: #ef4444; /* Cor vermelha no hover */
+}
+
+
+.round-container {
+  margin-bottom: 2rem; /* Mais espaço entre rodadas */
+  padding-bottom: 1rem; /* Espaço abaixo do grid de mesas */
+  border-bottom: 1px solid #eee; /* Separador entre rodadas */
+}
+.round-container:last-child {
+  margin-bottom: 0; /* Remove margem da última rodada */
+  border-bottom: none; /* Remove separador da última rodada */
+}
+
+.round-container h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.tables-grid {
+  display: grid;
+  /* Grid responsivo para as mesas */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.table-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 1rem;
+  background-color: #fff;
+}
+
+.table-card h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.table-card ul {
+  margin: 0;
+  padding-left: 1.2rem; /* Padding ajustado */
+  list-style: disc; /* Estilo de marcador padrão */
+}
+
+.table-card li {
+  margin-bottom: 0.3rem; /* Espaço entre participantes */
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+/* --- NOVO: Estilo para Tabela Vazia --- */
+.empty-table {
+  font-style: italic;
+  color: #9ca3af; /* Cinza mais claro */
+  font-size: 0.875rem;
+  margin: 0.5rem 0; /* Espaçamento */
+}
+
+.route-item {
+  margin-bottom: 0.6rem; /* Espaço entre itens de roteiro */
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.route-item strong {
+  color: #1f2937;
+  margin-right: 0.5rem;
+}
+
+/* --- NOVO: Seções de Resultado Roláveis --- */
+.results-section {
+max-height: 450px; /* Altura máxima antes da rolagem */
+overflow-y: auto;  /* Adiciona rolagem vertical se necessário */
+padding-right: 10px; /* Espaço para a barra de rolagem */
+/* Para navegadores Webkit (Chrome, Safari) */
+&::-webkit-scrollbar {
+    width: 8px;
+}
+&::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+&::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+&::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+/* Para Firefox */
+scrollbar-width: thin; /* "auto" ou "thin" */
+scrollbar-color: #ccc #f1f1f1; /* thumb track */
+}
+
+
+/* Media Queries para Responsividade */
+@media (max-width: 768px) {
   
-  .card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .margin-top {
-    margin-top: 1rem;
-  }
-  
-  .card-header {
-    padding: 1rem;
-    border-bottom: 1px solid #eee;
-  }
-  
-  .card-title {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-  }
-  
-  .card-content {
-    padding: 1rem;
-  }
-  
+
   .card-footer {
-    padding: 1rem;
-    border-top: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
+      flex-direction: column; /* Empilha botões em telas pequenas */
+      align-items: stretch; /* Faz botões ocuparem largura total */
   }
-  
-  .grid-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+  .card:first-of-type .card-footer {
+      /* Mantém empilhado no primeiro card também */
+      justify-content: flex-end; /* Reverte para padrão */
   }
-  
+
+  .container {
+      padding: 0.5rem; /* Menos padding em telas pequenas */
+  }
+  .card-content, .card-header, .card-footer {
+      padding: 1rem; /* Padding consistente */
+  }
+}
+
+@media (max-width: 480px) {
   .config-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+      grid-template-columns: 1fr; /* Força uma coluna em telas muito pequenas */
   }
-  
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .input {
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 0.875rem;
-  }
-  
-  .button {
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    cursor: pointer;
-    font-weight: 500;
-    border: none;
-  }
-  
-  .button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .primary {
-    background-color: #3b82f6;
-    color: white;
-  }
-  
-  .primary:hover {
-    background-color: #2563eb;
-  }
-  
-  .outline {
-    background-color: transparent;
-    color: #3b82f6;
-    border: 1px solid #3b82f6;
-  }
-  
-  .outline:hover {
-    background-color: rgba(59, 130, 246, 0.1);
-  }
-  
-  .participant-input {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .participant-list {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 0.5rem;
-    min-height: 100px;
-  }
-  
-  .participants-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-  }
-  
-  .participant-tag {
-    background-color: #f3f4f6;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .remove-btn {
-    background: none;
-    border: none;
-    color: #ef4444;
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-    padding: 0 0.25rem;
-  }
-  
-  .remove-btn:hover {
-    color: #b91c1c;
-  }
-  
   .tables-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+       grid-template-columns: 1fr; /* Força uma coluna */
   }
-  
-  .round-container {
-    margin-bottom: 1rem;
-  }
-  
-  .table-card {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 0.5rem;
-  }
-  
-  .table-card h4 {
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-  }
-  
-  .table-card ul {
-    margin: 0;
-    padding-left: 1.5rem;
-  }
-  
-  .route-item {
-    margin-bottom: 0.5rem;
-  }
-  
-  @media (max-width: 768px) {
-    .config-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .participant-input {
-      flex-direction: column;
-    }
-    
-    .tables-grid {
-      grid-template-columns: 1fr;
-    }
-  }
+}

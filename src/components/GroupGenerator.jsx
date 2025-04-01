@@ -212,7 +212,7 @@ const GroupGenerator = () => {
   };
 
   const generateGroups = () => {
-  // Validações mantidas (remova a validação de participantes < mesas se quiser permitir mesas vazias)
+    // Validações mantidas (apenas aviso para participantes insuficientes)
     if (participants.length === 0) {
       alert('Adicione participantes antes de gerar grupos.');
       return;
@@ -220,17 +220,20 @@ const GroupGenerator = () => {
     if (participants.length < numTables * peoplePerTable) {
       alert(`Aviso: O número de participantes (${participants.length}) é menor que o necessário para preencher todas as mesas (${numTables * peoplePerTable}).`);
     }
-
+    if (participants.length > numTables * peoplePerTable) {
+      alert(`Aviso: O número de participantes (${participants.length}) é maior que o planejado para as mesas (${numTables * peoplePerTable}). Os participantes excedentes serão distribuídos uniformemente.`);
+    }
+  
     let roundResults = [];
     let participantRoutes = {};
     const encounterHistory = new Map();
-
+  
     // Inicialização
     participants.forEach(p => {
       participantRoutes[p] = [];
       encounterHistory.set(p, new Set());
     });
-
+  
     for (let round = 0; round < numRounds; round++) {
       let groups = Array.from({ length: numTables }, () => []);
       let participantsCopy = [...participants];
@@ -239,22 +242,20 @@ const GroupGenerator = () => {
       if (round > 0) {
         participantsCopy = [participantsCopy[0], ...participantsCopy.slice(1).sort(() => Math.random() - 0.5)];
       }
-
+  
       // Algoritmo de distribuição uniforme aprimorado
-      let tableIndex = 0;
       while (participantsCopy.length > 0) {
-        // Encontra a próxima mesa com capacidade e menor número de participantes
-        let bestTable = -1;
-        let minParticipants = Infinity;
+        // Encontra a próxima mesa com menor número de participantes
+        let bestTable = 0;
+        let minParticipants = groups[0].length;
         
-        for (let i = 0; i < numTables; i++) {
-          const currentSize = groups[i].length;
-          if (currentSize < peoplePerTable && currentSize < minParticipants) {
-            minParticipants = currentSize;
+        for (let i = 1; i < numTables; i++) {
+          if (groups[i].length < minParticipants) {
+            minParticipants = groups[i].length;
             bestTable = i;
           }
         }
-
+  
         // Seleciona o próximo participante com menor histórico de conflitos para esta mesa
         let bestParticipantIndex = 0;
         let minConflicts = Infinity;
@@ -267,7 +268,7 @@ const GroupGenerator = () => {
             bestParticipantIndex = idx;
           }
         });
-
+  
         // Aloca o participante selecionado
         const [participant] = participantsCopy.splice(bestParticipantIndex, 1);
         groups[bestTable].push(participant);
@@ -281,13 +282,13 @@ const GroupGenerator = () => {
           }
         });
       }
-
+  
       roundResults.push(groups);
     }
-
+  
     // Analisa encontros recorrentes após gerar todos os grupos
     const encounterAnalysis = analyzeEncounters(roundResults);
-
+  
     setGeneratedGroups(roundResults);
     setIndividualRoutes(participantRoutes);
     setRecurringEncounters(encounterAnalysis);

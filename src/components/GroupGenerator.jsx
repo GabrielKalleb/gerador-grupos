@@ -17,16 +17,18 @@ if (typeof window !== 'undefined' && 'Worker' in window) { // Garante que isso r
 // -------------------------------
 
 const GroupGenerator = () => {
-  const [numTables, setNumTables] = useState(3);
-  const [peoplePerTable, setPeoplePerTable] = useState(4);
-  const [numRounds, setNumRounds] = useState(3);
+  const [numTables, setNumTables] = useState(0);
+  const [peoplePerTable, setPeoplePerTable] = useState(0);
+  const [numRounds, setNumRounds] = useState(0);
   const [participants, setParticipants] = useState([]);
   const [currentParticipant, setCurrentParticipant] = useState('');
   const [generatedGroups, setGeneratedGroups] = useState(null);
   const [individualRoutes, setIndividualRoutes] = useState(null);
-  const [isLoadingFile, setIsLoadingFile] = useState(false); // Adiciona estado de carregamento
-  const [fileError, setFileError] = useState(''); // Adiciona estado de erro
+  const [isLoadingFile, setIsLoadingFile] = useState(false);
+  const [fileError, setFileError] = useState('');
   const fileInputRef = useRef(null);
+  // Novo estado para armazenar informações de encontros recorrentes
+  const [recurringEncounters, setRecurringEncounters] = useState(null);
 
   const addParticipant = () => {
     if (currentParticipant.trim() && !participants.includes(currentParticipant.trim())) {
@@ -143,67 +145,152 @@ const GroupGenerator = () => {
   };
   // --- Fim da função handleFileUpload Atualizada ---
 
+  // Nova função para analisar encontros recorrentes
+  const analyzeEncounters = (roundGroups) => {
+    // Matriz para rastrear encontros
+    // O formato será: { participantA: { participantB: count, ... }, ... }
+    const encounters = {};
+    
+    // Inicializa a matriz de encontros para todos os participantes
+    participants.forEach(p => {
+      encounters[p] = {};
+    });
+    
+    // Para cada rodada e cada mesa, registra encontros entre todos os participantes
+    roundGroups.forEach((round) => {
+      round.forEach((table) => {
+        // Para cada par de pessoas na mesma mesa
+        for (let i = 0; i < table.length; i++) {
+          for (let j = i + 1; j < table.length; j++) {
+            const person1 = table[i];
+            const person2 = table[j];
+            
+            // Incrementa o contador para este par
+            if (!encounters[person1][person2]) {
+              encounters[person1][person2] = 1;
+            } else {
+              encounters[person1][person2]++;
+            }
+            
+            // Também registra na direção oposta para facilitar a consulta
+            if (!encounters[person2][person1]) {
+              encounters[person2][person1] = 1;
+            } else {
+              encounters[person2][person1]++;
+            }
+          }
+        }
+      });
+    });
+    
+    // Encontra encontros recorrentes (mais de uma vez)
+    const recurring = {};
+    let totalRecurringEncounters = 0;
+    
+    participants.forEach(person1 => {
+      const personRecurring = [];
+      Object.keys(encounters[person1]).forEach(person2 => {
+        // Contamos apenas em uma direção para evitar duplicação
+        if (person1 < person2 && encounters[person1][person2] > 1) {
+          personRecurring.push({
+            person: person2,
+            count: encounters[person1][person2]
+          });
+          totalRecurringEncounters++;
+        }
+      });
+      
+      if (personRecurring.length > 0) {
+        recurring[person1] = personRecurring;
+      }
+    });
+    
+    return {
+      detailedRecurring: recurring,
+      totalRecurringEncounters: totalRecurringEncounters
+    };
+  };
 
   const generateGroups = () => {
-    // Validação básica
+  // Validações mantidas (remova a validação de participantes < mesas se quiser permitir mesas vazias)
     if (participants.length === 0) {
-        alert('Adicione participantes antes de gerar grupos.');
-        return;
+      alert('Adicione participantes antes de gerar grupos.');
+      return;
     }
-    // Mantém o aviso, mas permite gerar se houver participantes
     if (participants.length < numTables * peoplePerTable) {
-      alert(`Aviso: O número de participantes (${participants.length}) é menor que o necessário para preencher todas as mesas (${numTables * peoplePerTable}). Algumas mesas podem ficar vazias ou com menos pessoas.`);
+      alert(`Aviso: O número de participantes (${participants.length}) é menor que o necessário para preencher todas as mesas (${numTables * peoplePerTable}).`);
     }
-     // Validação crítica: impossível distribuir se participantes < mesas
-     if (participants.length < numTables) {
-        alert(`Erro: O número de participantes (${participants.length}) é menor que o número de mesas (${numTables}). Impossível distribuir.`);
-        return;
-     }
 
-    // Algoritmo simplificado de geração de grupos com rastreamento
     let roundResults = [];
     let participantRoutes = {};
-    let currentParticipants = [...participants]; // Usa uma cópia para embaralhar a cada rodada
+    const encounterHistory = new Map();
 
-    // Inicializa as rotas para cada participante
+    // Inicialização
     participants.forEach(p => {
       participantRoutes[p] = [];
+      encounterHistory.set(p, new Set());
     });
 
     for (let round = 0; round < numRounds; round++) {
-      // Embaralha os participantes para esta rodada
-      let shuffledParticipants = [...currentParticipants].sort(() => Math.random() - 0.5);
+      let groups = Array.from({ length: numTables }, () => []);
+      let participantsCopy = [...participants];
+      
+      // Rotação inteligente para novas combinações
+      if (round > 0) {
+        participantsCopy = [participantsCopy[0], ...participantsCopy.slice(1).sort(() => Math.random() - 0.5)];
+      }
 
-      let roundGroups = Array.from({ length: numTables }, () => []);
-
-      // Distribui os participantes ciclicamente pelas mesas
-      shuffledParticipants.forEach((participant, index) => {
-        const tableIndex = index % numTables; // Atribui às mesas 0, 1, 2, ..., numTables-1
-
-        // Adiciona participante à mesa se ela não estiver cheia (respeita peoplePerTable)
-        // Se participants.length < numTables * peoplePerTable, algumas mesas terão menos pessoas.
-        if (roundGroups[tableIndex].length < peoplePerTable) {
-            roundGroups[tableIndex].push(participant);
-            // Rastreia rotas individuais
-            participantRoutes[participant].push(`Rodada ${round + 1}: Mesa ${tableIndex + 1}`);
-        } else {
-            // Este caso pode acontecer se participants.length > numTables * peoplePerTable
-            // Por simplicidade, atualmente ignoramos participantes extras por rodada.
-            // Um algoritmo mais complexo seria necessário para garantir que todos participem se possível,
-            // ou para lidar com participantes excedentes.
-            // Por enquanto, registre que eles não conseguiram uma mesa nesta rodada (ou trate de forma diferente)
-             participantRoutes[participant].push(`Rodada ${round + 1}: (Não alocado)`); // Ou omita esta entrada
+      // Algoritmo de distribuição uniforme aprimorado
+      let tableIndex = 0;
+      while (participantsCopy.length > 0) {
+        // Encontra a próxima mesa com capacidade e menor número de participantes
+        let bestTable = -1;
+        let minParticipants = Infinity;
+        
+        for (let i = 0; i < numTables; i++) {
+          const currentSize = groups[i].length;
+          if (currentSize < peoplePerTable && currentSize < minParticipants) {
+            minParticipants = currentSize;
+            bestTable = i;
+          }
         }
-      });
 
-      // O código acima já distribui ciclicamente, o que é razoável para poucos participantes.
-      // Lugares vazios ocorrerão naturalmente se não houver pessoas suficientes.
+        // Seleciona o próximo participante com menor histórico de conflitos para esta mesa
+        let bestParticipantIndex = 0;
+        let minConflicts = Infinity;
+        
+        participantsCopy.forEach((p, idx) => {
+          const conflicts = groups[bestTable].reduce((acc, member) => 
+            acc + (encounterHistory.get(p).has(member) ? 1 : 0), 0);
+          if (conflicts < minConflicts) {
+            minConflicts = conflicts;
+            bestParticipantIndex = idx;
+          }
+        });
 
-      roundResults.push(roundGroups);
+        // Aloca o participante selecionado
+        const [participant] = participantsCopy.splice(bestParticipantIndex, 1);
+        groups[bestTable].push(participant);
+        participantRoutes[participant].push(`Rodada ${round + 1}: Mesa ${bestTable + 1}`);
+        
+        // Atualiza histórico de encontros
+        groups[bestTable].forEach(member => {
+          if (member !== participant) {
+            encounterHistory.get(participant).add(member);
+            encounterHistory.get(member).add(participant);
+          }
+        });
+      }
+
+      roundResults.push(groups);
     }
+
+    // Analisa encontros recorrentes após gerar todos os grupos
+    const encounterAnalysis = analyzeEncounters(roundResults);
 
     setGeneratedGroups(roundResults);
     setIndividualRoutes(participantRoutes);
+    setRecurringEncounters(encounterAnalysis);
   };
 
   const downloadReport = () => {
@@ -238,6 +325,34 @@ const GroupGenerator = () => {
             reportContent += `${participant}: ${routes.join(' | ')}\n`;
         });
 
+    // Adiciona informação de encontros recorrentes ao relatório
+    if (recurringEncounters) {
+      reportContent += "\nEncontros Recorrentes:\n";
+      reportContent += "=====================\n\n";
+      
+      // Verifica se existem encontros recorrentes
+      if (recurringEncounters.totalRecurringEncounters === 0) {
+        reportContent += "Não foram detectados encontros recorrentes nesta distribuição.\n";
+      } else {
+        reportContent += `Total de encontros recorrentes: ${recurringEncounters.totalRecurringEncounters}\n\n`;
+        
+        // Lista encontros recorrentes por pessoa
+        Object.entries(recurringEncounters.detailedRecurring)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .forEach(([person, encounters]) => {
+            const totalRecurringForPerson = encounters.reduce((sum, encounter) => sum + encounter.count - 1, 0);
+            reportContent += `${person} teve ${totalRecurringForPerson} encontro(s) recorrente(s):\n`;
+            
+            encounters
+              .sort((a, b) => b.count - a.count) // Ordena por número de encontros (decrescente)
+              .forEach(({ person: otherPerson, count }) => {
+                reportContent += `  - ${person} - ${otherPerson} (${count} vezes)\n`;
+              });
+              
+            reportContent += "\n";
+          });
+      }
+    }
 
     // Cria e baixa o arquivo
     const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
@@ -264,10 +379,16 @@ const GroupGenerator = () => {
                 <label>Número de Mesas</label>
                 <input
                   type="number"
-                  value={numTables}
-                  // Garante que o valor não seja menor que 1
-                  onChange={(e) => setNumTables(Math.max(1, Number(e.target.value)))}
-                  min="1"
+                  value={numTables === 0 ? '' : numTables}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setNumTables(0);
+                    } else {
+                      setNumTables(Math.max(0, Number(value)));
+                    }
+                  }}
+                  min="0"
                   className="input"
                 />
               </div>
@@ -275,10 +396,16 @@ const GroupGenerator = () => {
                 <label>Pessoas por Mesa</label>
                 <input
                   type="number"
-                  value={peoplePerTable}
-                  // Garante que o valor não seja menor que 1
-                  onChange={(e) => setPeoplePerTable(Math.max(1, Number(e.target.value)))}
-                  min="1"
+                  value={peoplePerTable === 0 ? '' : peoplePerTable}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setPeoplePerTable(0);
+                    } else {
+                      setPeoplePerTable(Math.max(0, Number(value)));
+                    }
+                  }}
+                  min="0"
                   className="input"
                 />
               </div>
@@ -286,10 +413,16 @@ const GroupGenerator = () => {
                 <label>Número de Rodadas</label>
                 <input
                   type="number"
-                  value={numRounds}
-                  // Garante que o valor não seja menor que 1
-                  onChange={(e) => setNumRounds(Math.max(1, Number(e.target.value)))}
-                  min="1"
+                  value={numRounds === 0 ? '' : numRounds}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setNumRounds(0);
+                    } else {
+                      setNumRounds(Math.max(0, Number(value)));
+                    }
+                  }}
+                  min="0"
                   className="input"
                 />
               </div>
@@ -327,7 +460,7 @@ const GroupGenerator = () => {
                {fileError && <p className="error-message">{fileError}</p>}
             </div>
 
-
+                  
             {/* Lista de Participantes */}
             <div className="participant-list">
               <h3>Participantes ({participants.length})</h3>
@@ -357,6 +490,7 @@ const GroupGenerator = () => {
               // Limpa também os resultados ao limpar participantes
               setGeneratedGroups(null);
               setIndividualRoutes(null);
+              setRecurringEncounters(null); // Também limpa encontros recorrentes
               setFileError(''); // Limpa erro de arquivo também
             }}
           >
@@ -428,6 +562,56 @@ const GroupGenerator = () => {
                     <strong>{participant}:</strong> {routes.join(' | ')}
                   </div>
              ))}
+           </div>
+         </div>
+       )}
+
+       {/* NOVA SEÇÃO: Exibição dos Encontros Recorrentes */}
+       {recurringEncounters && (
+         <div className="card margin-top">
+           <div className="card-header">
+             <h2 className="card-title">Verificação de Encontros Recorrentes</h2>
+           </div>
+           <div className="card-content results-section">
+             {/* Cabeçalho com total de encontros recorrentes */}
+             <div className="summary-container">
+               <h3>
+                 {recurringEncounters.totalRecurringEncounters === 0 
+                   ? "Nenhum encontro recorrente detectado" 
+                   : `Total de encontros recorrentes: ${recurringEncounters.totalRecurringEncounters}`}
+               </h3>
+             </div>
+             
+             {/* Detalhes de encontros recorrentes por pessoa */}
+             {Object.keys(recurringEncounters.detailedRecurring).length > 0 ? (
+               <div className="recurring-encounters">
+                 {Object.entries(recurringEncounters.detailedRecurring)
+                   .sort((a, b) => a[0].localeCompare(b[0])) // Ordena alfabeticamente
+                   .map(([person, encounters]) => {
+                     // Calcula o total de encontros recorrentes para esta pessoa
+                     const totalRecurringForPerson = encounters.reduce(
+                       (sum, encounter) => sum + encounter.count - 1, 0
+                     );
+                     
+                     return (
+                       <div key={person} className="encounter-item">
+                         <h4>{person} teve {totalRecurringForPerson} encontro(s) recorrente(s):</h4>
+                         <ul>
+                           {encounters
+                             .sort((a, b) => b.count - a.count) // Ordena por frequência
+                             .map(({ person: otherPerson, count }, index) => (
+                               <li key={index}>
+                                 {person} - {otherPerson} ({count} vezes)
+                               </li>
+                             ))}
+                         </ul>
+                       </div>
+                     );
+                   })}
+               </div>
+             ) : (
+               <p className="no-recurring">A distribuição atual não gerou encontros recorrentes.</p>
+             )}
            </div>
          </div>
        )}
